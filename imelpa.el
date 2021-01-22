@@ -124,3 +124,26 @@ Argument PACKAGE a `imelpa-package-desc' object."
       (let ((command (format "%s %s -P %s" tool url dir)))
         (progn (message command)
                (shell-command command)))))))
+
+(defun imelpa--get-github-commit-id (url)
+  (let ((content-pattern "github.com/\\([^/]+?\\)/\\([^/]+?\\)/\\(tree\\|blob\\)/\\([^/]+?\\)/\\(.+\\)")
+        (repo-pattern "github.com/\\([^/]+?\\)/\\([^/]+\\)")
+        (pattern ""))
+
+    (cond
+     ((string-match content-pattern url) (setq pattern content-pattern))
+     ((string-match repo-pattern url) (setq pattern repo-pattern))
+     (t (error ("Not supported github url"))))
+
+    (save-match-data
+      (and (string-match pattern url)
+           (let* ((owner  (match-string 1 url))
+                  (repo   (match-string 2 url))
+                  (type   (match-string 3 url))
+                  (branch (match-string 4 url))
+                  (path   (match-string 5 url))
+                  (api    (format "https://api.github.com/repos/%s/%s/commits?sha=%s&path=%s"
+                                  owner repo (or branch "") (or path "")))
+                  )
+
+             )))))
