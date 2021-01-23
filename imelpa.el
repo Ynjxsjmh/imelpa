@@ -78,6 +78,9 @@ Slots:
   tool
   dir)
 
+(defconst imelpa-github-repo-regexp "github.com/\\([^/]+?\\)/\\([^/]+\\)")
+(defconst imelpa-github-content-regexp "github.com/\\([^/]+?\\)/\\([^/]+?\\)/\\(tree\\|blob\\)/\\([^/]+?\\)/\\(.+\\)")
+
 (defun imelpa-init ()
   "Read the configuration file and install uninstalled packages."
   (unless (file-directory-p imelpa-packages-dir)
@@ -159,13 +162,13 @@ returning the result as a `plist' object with following keys:
 :path    The filepath
 "
   (let (github
-        pattern
-        (repo-pattern "github.com/\\([^/]+?\\)/\\([^/]+\\)")
-        (content-pattern "github.com/\\([^/]+?\\)/\\([^/]+?\\)/\\(tree\\|blob\\)/\\([^/]+?\\)/\\(.+\\)"))
+        pattern)
 
     (cond
-     ((string-match content-pattern url) (setq pattern content-pattern))
-     ((string-match repo-pattern url) (setq pattern repo-pattern))
+     ((string-match imelpa-github-content-regexp url)
+      (setq pattern imelpa-github-content-regexp))
+     ((string-match imelpa-github-repo-regexp url)
+      (setq pattern imelpa-github-repo-regexp))
      (t (error "Not supported github url %s" url)))
 
     (save-match-data
