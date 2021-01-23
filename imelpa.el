@@ -125,6 +125,30 @@ Argument PACKAGE a `imelpa-package-desc' object."
         (progn (message command)
                (shell-command command)))))))
 
+(defun imelpa--http-post (url)
+  "Send HTTP request to URL,
+returning the response as a `plist' object:
+:header   HTTP raw heaers
+:content  HTTP content
+:status   HTTP status code
+"
+  (let (header
+	    content
+	    status
+        response)
+    (with-current-buffer
+	    (url-retrieve-synchronously url)
+	  ;; status
+	  (setq status url-http-response-status)
+	  ;; return the header and the data separately
+	  (goto-char (point-min))
+      (goto-char url-http-end-of-headers)
+	  (setq header   (buffer-substring (point-min) (point))
+		    content  (buffer-substring (1+ (point)) (point-max)))
+      (setq response (plist-put response :content content))
+      (setq response (plist-put response :header  header))
+      (setq response (plist-put response :status  status)))))
+
 (defun imelpa--get-github-commit-id (url)
   (let ((content-pattern "github.com/\\([^/]+?\\)/\\([^/]+?\\)/\\(tree\\|blob\\)/\\([^/]+?\\)/\\(.+\\)")
         (repo-pattern "github.com/\\([^/]+?\\)/\\([^/]+\\)")
