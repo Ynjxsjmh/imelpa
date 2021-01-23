@@ -149,30 +149,47 @@ returning the response as a `plist' object:
       (setq response (plist-put response :header  header))
       (setq response (plist-put response :status  status)))))
 
-(defun imelpa--get-commit-id-from-github (url)
-  (let ((content-pattern "github.com/\\([^/]+?\\)/\\([^/]+?\\)/\\(tree\\|blob\\)/\\([^/]+?\\)/\\(.+\\)")
+(defun imelpa--parse-github-url (url)
+  "Parse github URL.
+returning the result as a `plist' object with following keys:
+:owner   The owner name
+:repo    The repo name
+:type    Possible values: tree/blob
+:branch  The branch name
+:path    The filepath
+"
+  (let (github
+        pattern
         (repo-pattern "github.com/\\([^/]+?\\)/\\([^/]+\\)")
-        (pattern ""))
+        (content-pattern "github.com/\\([^/]+?\\)/\\([^/]+?\\)/\\(tree\\|blob\\)/\\([^/]+?\\)/\\(.+\\)"))
 
     (cond
      ((string-match content-pattern url) (setq pattern content-pattern))
      ((string-match repo-pattern url) (setq pattern repo-pattern))
-     (t (error ("Not supported github url"))))
+     (t (error "Not supported github url %s" url)))
 
     (save-match-data
       (and (string-match pattern url)
-           (let* ((owner  (match-string 1 url))
-                  (repo   (match-string 2 url))
-                  (type   (match-string 3 url))
-                  (branch (match-string 4 url))
-                  (path   (match-string 5 url))
-                  (api    (format "https://api.github.com/repos/%s/%s/commits?sha=%s&path=%s&per_page=1"
-                                  owner repo (or branch "") (or path "")))
-                  (res    (imelpa--http-post api)))
+           (setq github (plist-put github :owner  (match-string 1 url)))
+           (setq github (plist-put github :repo   (match-string 2 url)))
+           (setq github (plist-put github :type   (match-string 3 url)))
+           (setq github (plist-put github :branch (match-string 4 url)))
+           (setq github (plist-put github :path   (match-string 5 url)))))))
 
-             (if (eq 200 (plist-get res :status))
-                 (let* ((content (plist-get res :content))
-                        (commits (json-read-from-string content))
-                        (recent-commit (elt commits 0)))
-                   (alist-get 'sha recent-commit))
-               (error "Failed to contact %s" api)))))))
+(defun imelpa--get-commit-id-from-github (url)
+  (let* ((github (imelpa--parse-github-url url))
+         (owner  (plist-get github :owner))
+         (repo   (plist-get github :repo))
+         (type   (plist-get github :type))
+         (branch (plist-get github :branch))
+         (path   (plist-get github :path))
+         (api    (format "https://api.github.com/repos/%s/%s/commits?sha=%s&path=%s&per_page=1"
+                         owner repo (or branch "") (or path "")))
+         (res    (imelpa--http-post api)))
+
+    (if (eq 200 (plist-get res :status))
+        (let* ((content (plist-get res :content))
+               (commits (json-read-from-string content))
+               (recent-commit (elt commits 0)))
+          (alist-get 'sha recent-commit))
+      (error "Failed to contact %s" api))))
