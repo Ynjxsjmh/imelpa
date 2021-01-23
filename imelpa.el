@@ -168,6 +168,11 @@ returning the response as a `plist' object:
                   (path   (match-string 5 url))
                   (api    (format "https://api.github.com/repos/%s/%s/commits?sha=%s&path=%s"
                                   owner repo (or branch "") (or path "")))
-                  )
+                  (res    (imelpa--http-post api)))
 
-             )))))
+             (if (eq 200 (plist-get res :status))
+                 (let* ((content (plist-get res :content))
+                        (commits (json-read-from-string content))
+                        (recent-commit (elt commits 0)))
+                   (alist-get 'sha recent-commit))
+               (error "Failed to contact %s" api)))))))
