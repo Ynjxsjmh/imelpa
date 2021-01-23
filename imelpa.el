@@ -166,7 +166,7 @@ returning the response as a `plist' object:
                   (type   (match-string 3 url))
                   (branch (match-string 4 url))
                   (path   (match-string 5 url))
-                  (api    (format "https://api.github.com/repos/%s/%s/commits?sha=%s&path=%s"
+                  (api    (format "https://api.github.com/repos/%s/%s/commits?sha=%s&path=%s&per_page=1"
                                   owner repo (or branch "") (or path "")))
                   (res    (imelpa--http-post api)))
 
