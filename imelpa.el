@@ -149,7 +149,7 @@ returning the response as a `plist' object:
       (setq response (plist-put response :header  header))
       (setq response (plist-put response :status  status)))))
 
-(defun imelpa--get-github-commit-id (url)
+(defun imelpa--get-commit-id-from-github (url)
   (let ((content-pattern "github.com/\\([^/]+?\\)/\\([^/]+?\\)/\\(tree\\|blob\\)/\\([^/]+?\\)/\\(.+\\)")
         (repo-pattern "github.com/\\([^/]+?\\)/\\([^/]+\\)")
         (pattern ""))
