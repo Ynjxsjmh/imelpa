@@ -195,26 +195,27 @@ returning the result as a `alist' object with download url as key and path as va
 
     (if (eq 200 (plist-get res :status))
         (let* ((data (plist-get res :content))
-               (json-array-type 'list)
+               (json-object-type 'hash-table)
+               (json-array-type  'list)
                (contents (json-read-from-string data)))
 
           (cond
            ((string= type "blob")
-            (let ((url (alist-get 'download_url contents))
-                  (dir (alist-get 'path contents)))
+            (let ((url (gethash "download_url" contents))
+                  (dir (gethash "path" contents)))
               (setq url-path-list (map-insert url-path-list url dir))))
            ((string= type "tree")
             (dolist (content contents)
-              (setq type (alist-get 'type content))
+              (setq type (gethash "type" content))
               (cond
                ((string= type "file")
-                (let ((url (alist-get 'download_url content))
-                      (dir (alist-get 'path content)))
+                (let ((url (gethash "download_url" content))
+                      (dir (gethash "path" content)))
                   (setq url-path-list (map-insert url-path-list url dir))))
                ((string= type "dir")
                 (setq url-path-list
                       (append url-path-list
-                              (imelpa--get-github-content-download-url (alist-get 'html_url content)))))
+                              (imelpa--get-github-content-download-url (gethash "html_url" content)))))
                (t (error "Unsupported content type %s" type)))))
            (t (error "Unsupported type %s" type))))
       (error "Failed to contact %s" api))
