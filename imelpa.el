@@ -124,9 +124,24 @@ Argument PACKAGE a `imelpa-package-desc' object."
         (progn (message command)
                (shell-command command))))
      ((equalp tool "wget")
-      (let ((command (format "%s %s -P %s" tool url dir)))
-        (progn (message command)
-               (shell-command command)))))))
+      (cond
+       ((string-match imelpa-github-content-regexp url)
+        (let* ((url-dir-list (imelpa--get-github-content-download-url-and-path url))
+               (path (plist-get (imelpa--parse-github-url url) :path)))
+          (dolist (url-dir url-dir-list)
+            (let* ((surl (last (car url-dir)))
+                   (sdir (last (cdr url-dir))))
+              (setq sdir (file-name-directory
+                          (mapconcat 'identity (cdr (split-string sdir path)) path)))
+
+              (let* ((command (format "wget %s -P %s"
+                                      surl (concat (file-name-as-directory dir) sdir))))
+                (progn (message command)
+                       (shell-command command)))))))
+       (t
+        (let ((command (format "wget %s -P %s" url dir)))
+          (progn (message command)
+                 (shell-command command)))))))))
 
 (defun imelpa--http-post (url)
   "Send HTTP request to URL,
