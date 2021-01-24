@@ -179,6 +179,47 @@ returning the result as a `plist' object with following keys:
            (setq github (plist-put github :branch (match-string 4 url)))
            (setq github (plist-put github :path   (match-string 5 url)))))))
 
+(defun imelpa--get-github-content-download-url-and-path (url)
+  "Get files download url,
+returning the result as a `alist' object with download url as key and path as value."
+  (let* ((github (imelpa--parse-github-url url))
+         (owner  (plist-get github :owner))
+         (repo   (plist-get github :repo))
+         (type   (plist-get github :type))
+         (branch (plist-get github :branch))
+         (path   (plist-get github :path))
+         (api    (format "https://api.github.com/repos/%s/%s/contents/%s?ref=%s"
+                         owner repo (or path "") (or branch "")))
+         (res    (imelpa--http-post api))
+         (url-path-list '()))
+
+    (if (eq 200 (plist-get res :status))
+        (let* ((data (plist-get res :content))
+               (json-array-type 'list)
+               (contents (json-read-from-string data)))
+
+          (cond
+           ((string= type "blob")
+            (let ((url (alist-get 'download_url contents))
+                  (dir (alist-get 'path contents)))
+              (setq url-path-list (map-insert url-path-list url dir))))
+           ((string= type "tree")
+            (dolist (content contents)
+              (setq type (alist-get 'type content))
+              (cond
+               ((string= type "file")
+                (let ((url (alist-get 'download_url content))
+                      (dir (alist-get 'path content)))
+                  (setq url-path-list (map-insert url-path-list url dir))))
+               ((string= type "dir")
+                (setq url-path-list
+                      (append url-path-list
+                              (imelpa--get-github-content-download-url (alist-get 'html_url content)))))
+               (t (error "Unsupported content type %s" type)))))
+           (t (error "Unsupported type %s" type))))
+      (error "Failed to contact %s" api))
+    url-path-list))
+
 (defun imelpa--get-commit-id-from-github (url)
   (let* ((github (imelpa--parse-github-url url))
          (owner  (plist-get github :owner))
