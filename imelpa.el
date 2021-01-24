@@ -215,7 +215,7 @@ returning the result as a `alist' object with download url as key and path as va
                ((string= type "dir")
                 (setq url-path-list
                       (append url-path-list
-                              (imelpa--get-github-content-download-url (gethash "html_url" content)))))
+                              (imelpa--get-github-content-download-url-and-path (gethash "html_url" content)))))
                (t (error "Unsupported content type %s" type)))))
            (t (error "Unsupported type %s" type))))
       (error "Failed to contact %s" api))
